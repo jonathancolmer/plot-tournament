@@ -240,6 +240,44 @@
     color: var(--uva-gray-dark);
   }
   .empty-state h2 { color: var(--uva-blue); }
+  .qr-big {
+    margin: 2rem auto 1rem;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    display: inline-block;
+  }
+  .qr-big img { display: block; width: 360px; height: 360px; }
+  .qr-url {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--uva-blue);
+    font-size: 1.1rem;
+    margin-top: 0.75rem;
+    word-break: break-all;
+  }
+  .qr-small {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: white;
+    border: 2px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 0.5rem;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .qr-small:hover { border-color: var(--uva-orange); }
+  .qr-small img { display: block; width: 110px; height: 110px; }
+  .qr-small .qr-caption {
+    font-size: 0.7rem;
+    text-align: center;
+    color: var(--uva-gray-dark);
+    margin-top: 0.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
   .connection-status {
     font-size: 0.8rem;
     color: var(--uva-gray-dark);
@@ -323,6 +361,16 @@
     { id: 10, file: "example_plots/pm25_race_option10_bubble.png",        name: "Bubble" },
   ];
   const plotById = id => PLOTS.find(p => p.id === id);
+
+  // ---- Voter URL & QR helpers -------------------------------------------
+  function voterUrl() {
+    return location.origin + location.pathname;
+  }
+  function qrSrc(size) {
+    const url = encodeURIComponent(voterUrl());
+    // QR Server API — free, no key, public
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${url}`;
+  }
 
   // ---- Role & device id --------------------------------------------------
   const params = new URLSearchParams(location.search);
@@ -485,6 +533,50 @@
     } else {
       renderMatchup();
     }
+    updateCornerQr();
+  }
+
+  function updateCornerQr() {
+    const existing = document.getElementById("cornerQr");
+    // Show corner QR only in presenter mode, and only when a tournament is running
+    const shouldShow = ROLE === "presenter" && tourState && tourState.phase === "voting";
+    if (shouldShow) {
+      if (!existing) {
+        const wrap = document.createElement("div");
+        wrap.id = "cornerQr";
+        wrap.className = "qr-small";
+        wrap.title = "Voter link — click to enlarge";
+        wrap.innerHTML = `
+          <img src="${qrSrc(220)}" alt="QR code" />
+          <div class="qr-caption">Scan to vote</div>
+        `;
+        wrap.addEventListener("click", showQrModal);
+        document.body.appendChild(wrap);
+      }
+    } else if (existing) {
+      existing.remove();
+    }
+  }
+
+  function showQrModal() {
+    const existing = document.getElementById("qrModal");
+    if (existing) { existing.remove(); return; }
+    const modal = document.createElement("div");
+    modal.id = "qrModal";
+    modal.style.cssText = `
+      position: fixed; inset: 0; background: rgba(35, 45, 75, 0.92);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 100; cursor: pointer;
+    `;
+    modal.innerHTML = `
+      <div style="background:white;padding:2rem;border-radius:12px;text-align:center;">
+        <img src="${qrSrc(480)}" alt="QR" style="display:block;width:480px;height:480px;" />
+        <div style="font-family:ui-monospace,monospace;color:var(--uva-blue);margin-top:1rem;font-size:1.2rem;">${voterUrl()}</div>
+        <div style="color:var(--uva-gray-dark);margin-top:0.5rem;font-size:0.9rem;">Click anywhere to close</div>
+      </div>
+    `;
+    modal.addEventListener("click", () => modal.remove());
+    document.body.appendChild(modal);
   }
 
   function renderHeaderControls() {
@@ -501,13 +593,25 @@
   }
 
   function renderEmpty() {
-    const msg = ROLE === "presenter"
-      ? `<h2>Ready to start</h2><p>Click <strong>Start / Restart</strong> above to begin the tournament.</p>`
-      : `<h2>Waiting for the presenter to start the tournament…</h2>`;
-    arenaEl.innerHTML = `<div class="empty-state">${msg}</div>`;
+    let inner;
+    if (ROLE === "presenter") {
+      inner = `
+        <h2>Ready to start</h2>
+        <p>Audience: scan to vote from your phone.</p>
+        <div class="qr-big">
+          <img src="${qrSrc(360)}" alt="QR code to voter page" />
+        </div>
+        <div class="qr-url">${voterUrl()}</div>
+        <p style="margin-top:2rem">Click <strong>Start / Restart</strong> above to begin.</p>
+      `;
+    } else {
+      inner = `<h2>Waiting for the presenter to start the tournament…</h2>`;
+    }
+    arenaEl.innerHTML = `<div class="empty-state">${inner}</div>`;
     progressText.textContent = ROLE === "presenter" ? "Not started" : "Waiting...";
     progressFill.style.width = "0%";
     instructionEl.textContent = "";
+    updateCornerQr();
   }
 
   function renderMatchup() {
@@ -610,6 +714,9 @@
         <ol>${historyHtml}</ol>
       </div>
     `;
+    // Hide corner QR on the winner screen
+    const corner = document.getElementById("cornerQr");
+    if (corner) corner.remove();
   }
 
   // initial paint
