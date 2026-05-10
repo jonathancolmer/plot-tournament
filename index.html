@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plot Tournament — Which PM2.5 Figure Wins?</title>
+<style>
+  :root {
+    --uva-blue: #232D4B;
+    --uva-orange: #E57200;
+    --uva-teal: #00B3BE;
+    --uva-gray-light: #E5E5E5;
+    --uva-gray-mid: #B7B7B7;
+    --uva-gray-dark: #666666;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--uva-blue);
+    background: #fafafa;
+  }
+  header {
+    background: var(--uva-blue);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+  header .subtitle {
+    font-size: 0.95rem;
+    opacity: 0.85;
+  }
+  .status-bar {
+    background: var(--uva-gray-light);
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    border-bottom: 2px solid var(--uva-orange);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .progress-text {
+    font-weight: 600;
+  }
+  .progress-bar {
+    flex: 1;
+    max-width: 300px;
+    margin: 0 1rem;
+    height: 8px;
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--uva-gray-mid);
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--uva-orange);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  button {
+    background: white;
+    color: var(--uva-blue);
+    border: 1px solid var(--uva-gray-mid);
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover {
+    background: var(--uva-blue);
+    color: white;
+    border-color: var(--uva-blue);
+  }
+  main {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .matchup {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+  .card {
+    background: white;
+    border: 2px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .card:hover {
+    border-color: var(--uva-orange);
+    box-shadow: 0 4px 20px rgba(229, 114, 0, 0.2);
+    transform: translateY(-2px);
+  }
+  .card-label {
+    font-weight: 600;
+    color: var(--uva-blue);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+  .card-tag {
+    display: inline-block;
+    background: var(--uva-gray-light);
+    color: var(--uva-gray-dark);
+    padding: 0.15rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    font-weight: 400;
+  }
+  .card-tag.champion {
+    background: var(--uva-orange);
+    color: white;
+  }
+  .card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .vs {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--uva-orange);
+    text-align: center;
+  }
+  .vote-hint {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--uva-gray-dark);
+  }
+  /* Winner screen */
+  .winner-screen {
+    text-align: center;
+    padding: 2rem;
+  }
+  .winner-screen h2 {
+    color: var(--uva-orange);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .winner-screen .winner-name {
+    color: var(--uva-blue);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+  .winner-screen img {
+    max-width: 80%;
+    border: 3px solid var(--uva-orange);
+    border-radius: 8px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.15);
+  }
+  .history {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--uva-gray-mid);
+  }
+  .history h3 {
+    margin-top: 0;
+    color: var(--uva-blue);
+    border-bottom: 2px solid var(--uva-orange);
+    padding-bottom: 0.5rem;
+  }
+  .history ol {
+    padding-left: 1.5rem;
+    line-height: 1.8;
+  }
+  .history .winner-mark {
+    color: var(--uva-orange);
+    font-weight: 700;
+  }
+  .history .loser-mark {
+    color: var(--uva-gray-dark);
+    text-decoration: line-through;
+  }
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--uva-gray-dark);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 900px) {
+    .matchup {
+      grid-template-columns: 1fr;
+    }
+    .vs {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Plot Tournament</h1>
+    <div class="subtitle">Which PM<sub>2.5</sub> figure communicates best?</div>
+  </div>
+  <div class="controls">
+    <button id="shuffleBtn" title="Restart with a random challenger order">Shuffle &amp; Restart</button>
+    <button id="restartBtn" title="Restart in original order">Restart</button>
+  </div>
+</header>
+
+<div class="status-bar">
+  <span class="progress-text" id="progressText">Round 1 of 9</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <span id="instruction">Click the plot you prefer</span>
+</div>
+
+<main>
+  <div id="arena"></div>
+</main>
+
+<footer>
+  Faculty Retreat — Learning to Work on the Jagged Frontier
+</footer>
+
+<script>
+  // ---- Configuration --------------------------------------------------------
+  const PLOTS = [
+    { id: 1,  file: "example_plots/pm25_race_option1_vbar.png",           name: "Vertical Bar" },
+    { id: 2,  file: "example_plots/pm25_race_option2_hbar.png",           name: "Horizontal Bar" },
+    { id: 3,  file: "example_plots/pm25_race_option3_lollipop.png",       name: "Lollipop" },
+    { id: 4,  file: "example_plots/pm25_race_option4_dot.png",            name: "Dot Plot" },
+    { id: 5,  file: "example_plots/pm25_race_option5_annotated_bar.png",  name: "Annotated Bar" },
+    { id: 6,  file: "example_plots/pm25_race_option6_diverging.png",      name: "Diverging" },
+    { id: 7,  file: "example_plots/pm25_race_option7_twocol_bar.png",     name: "Two-Column Bar" },
+    { id: 8,  file: "example_plots/pm25_race_option8_dumbbell.png",       name: "Dumbbell" },
+    { id: 9,  file: "example_plots/pm25_race_option9_numberline.png",     name: "Number Line" },
+    { id: 10, file: "example_plots/pm25_race_option10_bubble.png",        name: "Bubble" },
+  ];
+
+  // ---- State ----------------------------------------------------------------
+  let queue = [];           // challengers still to face the champion
+  let champion = null;      // current winning plot
+  let round = 0;            // 1-indexed round we're currently voting in
+  let totalRounds = PLOTS.length - 1;
+  let history = [];         // list of {round, champion, challenger, winner}
+
+  // ---- Logic ----------------------------------------------------------------
+  function startTournament(shuffle = false) {
+    const order = [...PLOTS];
+    if (shuffle) {
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+    }
+    champion = order[0];
+    queue = order.slice(1);
+    round = 1;
+    history = [];
+    renderMatchup();
+  }
+
+  function vote(winnerId) {
+    const challenger = queue.shift();
+    const loser = (winnerId === champion.id) ? challenger : champion;
+    const winner = (winnerId === champion.id) ? champion : challenger;
+    history.push({
+      round: round,
+      champion: champion,
+      challenger: challenger,
+      winner: winner,
+      loser: loser,
+    });
+    champion = winner;
+    round += 1;
+    if (queue.length === 0) {
+      renderWinner();
+    } else {
+      renderMatchup();
+    }
+  }
+
+  // ---- Rendering ------------------------------------------------------------
+  function renderMatchup() {
+    const arena = document.getElementById("arena");
+    const challenger = queue[0];
+    document.getElementById("progressText").textContent =
+      `Round ${round} of ${totalRounds}`;
+    document.getElementById("progressFill").style.width =
+      `${((round - 1) / totalRounds) * 100}%`;
+    document.getElementById("instruction").textContent =
+      "Click the plot you prefer";
+
+    arena.innerHTML = `
+      <div class="matchup">
+        <div class="card" data-id="${champion.id}">
+          <div class="card-label">
+            Option ${champion.id}: ${champion.name}
+            <span class="card-tag champion">Champion</span>
+          </div>
+          <img src="${champion.file}" alt="${champion.name}" />
+          <div class="vote-hint">Click to keep the champion</div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="card" data-id="${challenger.id}">
+          <div class="card-label">
+            Option ${challenger.id}: ${challenger.name}
+            <span class="card-tag">Challenger</span>
+          </div>
+          <img src="${challenger.file}" alt="${challenger.name}" />
+          <div class="vote-hint">Click to crown a new champion</div>
+        </div>
+      </div>
+    `;
+    arena.querySelectorAll(".card").forEach(card => {
+      card.addEventListener("click", () => {
+        const id = parseInt(card.getAttribute("data-id"), 10);
+        vote(id);
+      });
+    });
+  }
+
+  function renderWinner() {
+    document.getElementById("progressText").textContent = "Tournament complete";
+    document.getElementById("progressFill").style.width = "100%";
+    document.getElementById("instruction").textContent = "We have a winner.";
+
+    const historyHtml = history.map(h => `
+      <li>
+        Round ${h.round}:
+        <span class="winner-mark">Option ${h.winner.id} (${h.winner.name})</span>
+        beat
+        <span class="loser-mark">Option ${h.loser.id} (${h.loser.name})</span>
+      </li>
+    `).join("");
+
+    document.getElementById("arena").innerHTML = `
+      <div class="winner-screen">
+        <h2>Winner</h2>
+        <div class="winner-name">Option ${champion.id}: ${champion.name}</div>
+        <img src="${champion.file}" alt="${champion.name}" />
+      </div>
+      <div class="history">
+        <h3>How we got here</h3>
+        <ol>${historyHtml}</ol>
+      </div>
+    `;
+  }
+
+  // ---- Wire up --------------------------------------------------------------
+  document.getElementById("restartBtn").addEventListener("click", () => startTournament(false));
+  document.getElementById("shuffleBtn").addEventListener("click", () => startTournament(true));
+
+  startTournament(false);
+</script>
+</body>
+</html>
