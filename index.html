@@ -31,14 +31,15 @@
     flex-wrap: wrap;
     gap: 1rem;
   }
-  header h1 {
-    margin: 0;
-    font-size: 1.4rem;
+  header h1 { margin: 0; font-size: 1.4rem; font-weight: 600; }
+  header .subtitle { font-size: 0.95rem; opacity: 0.85; }
+  .role-badge {
+    background: var(--uva-orange);
+    padding: 0.25rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
     font-weight: 600;
-  }
-  header .subtitle {
-    font-size: 0.95rem;
-    opacity: 0.85;
+    text-transform: uppercase;
   }
   .status-bar {
     background: var(--uva-gray-light);
@@ -51,9 +52,7 @@
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  .progress-text {
-    font-weight: 600;
-  }
+  .progress-text { font-weight: 600; }
   .progress-bar {
     flex: 1;
     max-width: 300px;
@@ -70,10 +69,7 @@
     width: 0%;
     transition: width 0.4s ease;
   }
-  .controls {
-    display: flex;
-    gap: 0.5rem;
-  }
+  .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   button {
     background: white;
     color: var(--uva-blue);
@@ -84,37 +80,48 @@
     cursor: pointer;
     font-family: inherit;
   }
-  button:hover {
+  button:hover:not(:disabled) {
     background: var(--uva-blue);
     color: white;
     border-color: var(--uva-blue);
   }
-  main {
-    padding: 2rem;
-    max-width: 1600px;
-    margin: 0 auto;
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary {
+    background: var(--uva-orange);
+    color: white;
+    border-color: var(--uva-orange);
+    font-weight: 600;
   }
+  button.primary:hover:not(:disabled) {
+    background: #c86300;
+    border-color: #c86300;
+  }
+  main { padding: 2rem; max-width: 1600px; margin: 0 auto; }
   .matchup {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     gap: 2rem;
-    align-items: center;
+    align-items: stretch;
   }
   .card {
     background: white;
     border: 2px solid var(--uva-gray-mid);
     border-radius: 8px;
     padding: 1rem;
-    cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-  .card:hover {
+  .card.voter { cursor: pointer; }
+  .card.voter:hover {
     border-color: var(--uva-orange);
     box-shadow: 0 4px 20px rgba(229, 114, 0, 0.2);
     transform: translateY(-2px);
+  }
+  .card.selected {
+    border-color: var(--uva-orange);
+    background: #fff6ed;
   }
   .card-label {
     font-weight: 600;
@@ -132,31 +139,69 @@
     margin-left: 0.5rem;
     font-weight: 400;
   }
-  .card-tag.champion {
-    background: var(--uva-orange);
-    color: white;
-  }
-  .card img {
-    max-width: 100%;
-    height: auto;
+  .card-tag.champion { background: var(--uva-orange); color: white; }
+  .card img { max-width: 100%; height: auto; border-radius: 4px; }
+  .vote-bar-wrap {
+    width: 100%;
+    margin-top: 0.75rem;
+    background: var(--uva-gray-light);
     border-radius: 4px;
+    overflow: hidden;
+    height: 28px;
+    position: relative;
+  }
+  .vote-bar {
+    height: 100%;
+    background: var(--uva-teal);
+    width: 0%;
+    transition: width 0.4s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 0.5rem;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  .vote-count-label {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--uva-blue);
+    font-weight: 600;
+    font-size: 0.9rem;
   }
   .vs {
     font-size: 2rem;
     font-weight: 700;
     color: var(--uva-orange);
     text-align: center;
+    align-self: center;
   }
   .vote-hint {
     margin-top: 0.75rem;
     font-size: 0.85rem;
     color: var(--uva-gray-dark);
   }
-  /* Winner screen */
-  .winner-screen {
-    text-align: center;
-    padding: 2rem;
+  .voter-feedback {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--uva-teal);
+    font-weight: 600;
   }
+  .action-bar {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .action-bar button {
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+  }
+  .winner-screen { text-align: center; padding: 2rem; }
   .winner-screen h2 {
     color: var(--uva-orange);
     font-size: 2rem;
@@ -186,17 +231,28 @@
     border-bottom: 2px solid var(--uva-orange);
     padding-bottom: 0.5rem;
   }
-  .history ol {
-    padding-left: 1.5rem;
-    line-height: 1.8;
-  }
-  .history .winner-mark {
-    color: var(--uva-orange);
-    font-weight: 700;
-  }
-  .history .loser-mark {
+  .history ol { padding-left: 1.5rem; line-height: 1.8; }
+  .history .winner-mark { color: var(--uva-orange); font-weight: 700; }
+  .history .loser-mark { color: var(--uva-gray-dark); text-decoration: line-through; }
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
     color: var(--uva-gray-dark);
-    text-decoration: line-through;
+  }
+  .empty-state h2 { color: var(--uva-blue); }
+  .connection-status {
+    font-size: 0.8rem;
+    color: var(--uva-gray-dark);
+  }
+  .connection-status.connected::before {
+    content: "●";
+    color: #2ecc71;
+    margin-right: 0.3rem;
+  }
+  .connection-status.disconnected::before {
+    content: "●";
+    color: #e74c3c;
+    margin-right: 0.3rem;
   }
   footer {
     text-align: center;
@@ -204,44 +260,56 @@
     color: var(--uva-gray-dark);
     font-size: 0.85rem;
   }
+  footer a { color: var(--uva-gray-dark); }
   @media (max-width: 900px) {
-    .matchup {
-      grid-template-columns: 1fr;
-    }
-    .vs {
-      font-size: 1.5rem;
-    }
+    .matchup { grid-template-columns: 1fr; }
+    .vs { font-size: 1.5rem; }
   }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>Plot Tournament</h1>
+    <h1>Plot Tournament <span id="roleBadge" class="role-badge" style="display:none"></span></h1>
     <div class="subtitle">Which PM<sub>2.5</sub> figure communicates best?</div>
   </div>
-  <div class="controls">
-    <button id="shuffleBtn" title="Restart with a random challenger order">Shuffle &amp; Restart</button>
-    <button id="restartBtn" title="Restart in original order">Restart</button>
-  </div>
+  <div class="controls" id="headerControls"></div>
 </header>
 
 <div class="status-bar">
-  <span class="progress-text" id="progressText">Round 1 of 9</span>
+  <span class="progress-text" id="progressText">Waiting...</span>
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-  <span id="instruction">Click the plot you prefer</span>
+  <span id="instruction"></span>
+  <span class="connection-status disconnected" id="connStatus">Connecting...</span>
 </div>
 
-<main>
-  <div id="arena"></div>
-</main>
+<main><div id="arena"><div class="empty-state"><h2>Loading…</h2></div></div></main>
 
 <footer>
   Faculty Retreat — Learning to Work on the Jagged Frontier
+  &nbsp;·&nbsp; <a id="modeLink" href="?role=presenter">Open presenter view</a>
 </footer>
 
-<script>
-  // ---- Configuration --------------------------------------------------------
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getDatabase, ref, set, update, onValue, remove, goOnline
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // ---- Firebase config ---------------------------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxsTW092AlcZ8MAnqCTIHghnysk2y2eQs",
+    authDomain: "j-colmer.firebaseapp.com",
+    databaseURL: "https://j-colmer-default-rtdb.firebaseio.com",
+    projectId: "j-colmer",
+    storageBucket: "j-colmer.firebasestorage.app",
+    messagingSenderId: "801031852610",
+    appId: "1:801031852610:web:25c1665d1dcdaafe2e53db"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // ---- Plot catalog ------------------------------------------------------
   const PLOTS = [
     { id: 1,  file: "example_plots/pm25_race_option1_vbar.png",           name: "Vertical Bar" },
     { id: 2,  file: "example_plots/pm25_race_option2_hbar.png",           name: "Horizontal Bar" },
@@ -254,16 +322,73 @@
     { id: 9,  file: "example_plots/pm25_race_option9_numberline.png",     name: "Number Line" },
     { id: 10, file: "example_plots/pm25_race_option10_bubble.png",        name: "Bubble" },
   ];
+  const plotById = id => PLOTS.find(p => p.id === id);
 
-  // ---- State ----------------------------------------------------------------
-  let queue = [];           // challengers still to face the champion
-  let champion = null;      // current winning plot
-  let round = 0;            // 1-indexed round we're currently voting in
-  let totalRounds = PLOTS.length - 1;
-  let history = [];         // list of {round, champion, challenger, winner}
+  // ---- Role & device id --------------------------------------------------
+  const params = new URLSearchParams(location.search);
+  const ROLE = params.get("role") === "presenter" ? "presenter" : "voter";
 
-  // ---- Logic ----------------------------------------------------------------
-  function startTournament(shuffle = false) {
+  function getDeviceId() {
+    let id = localStorage.getItem("plotTournamentDeviceId");
+    if (!id) {
+      id = "d-" + Math.random().toString(36).slice(2, 12) + "-" + Date.now().toString(36);
+      localStorage.setItem("plotTournamentDeviceId", id);
+    }
+    return id;
+  }
+  const DEVICE_ID = getDeviceId();
+
+  // ---- DOM refs ----------------------------------------------------------
+  const arenaEl       = document.getElementById("arena");
+  const progressText  = document.getElementById("progressText");
+  const progressFill  = document.getElementById("progressFill");
+  const instructionEl = document.getElementById("instruction");
+  const roleBadgeEl   = document.getElementById("roleBadge");
+  const headerControls= document.getElementById("headerControls");
+  const modeLinkEl    = document.getElementById("modeLink");
+  const connStatusEl  = document.getElementById("connStatus");
+
+  if (ROLE === "presenter") {
+    roleBadgeEl.textContent = "Presenter";
+    roleBadgeEl.style.display = "inline-block";
+    modeLinkEl.href = location.pathname;
+    modeLinkEl.textContent = "Open voter view";
+  } else {
+    modeLinkEl.href = "?role=presenter";
+  }
+
+  // ---- Firebase state ----------------------------------------------------
+  let tourState = null;
+  let voteSnapshot = {};
+  let currentVotesUnsub = null;
+  let lastVotesPath = null;
+
+  onValue(ref(db, ".info/connected"), snap => {
+    const connected = snap.val() === true;
+    connStatusEl.textContent = connected ? "Connected" : "Disconnected";
+    connStatusEl.className = "connection-status " + (connected ? "connected" : "disconnected");
+  });
+
+  onValue(ref(db, "tournament"), snap => {
+    tourState = snap.val();
+    subscribeVotes();
+    render();
+  });
+
+  function subscribeVotes() {
+    if (!tourState) return;
+    const path = `votes/${tourState.sessionId}/${tourState.round}`;
+    if (path === lastVotesPath) return;
+    if (currentVotesUnsub) currentVotesUnsub();
+    lastVotesPath = path;
+    currentVotesUnsub = onValue(ref(db, path), snap => {
+      voteSnapshot = snap.val() || {};
+      render();
+    });
+  }
+
+  // ---- Presenter actions -------------------------------------------------
+  async function startTournament(shuffle) {
     const order = [...PLOTS];
     if (shuffle) {
       for (let i = order.length - 1; i > 0; i--) {
@@ -271,92 +396,214 @@
         [order[i], order[j]] = [order[j], order[i]];
       }
     }
-    champion = order[0];
-    queue = order.slice(1);
-    round = 1;
-    history = [];
-    renderMatchup();
+    const sessionId = "s-" + Date.now().toString(36);
+    const state = {
+      sessionId,
+      order: order.map(p => p.id),
+      round: 1,
+      totalRounds: order.length - 1,
+      championId: order[0].id,
+      challengerId: order[1].id,
+      phase: "voting",
+      history: [],
+      winnerId: null,
+    };
+    await set(ref(db, "tournament"), state);
   }
 
-  function vote(winnerId) {
-    const challenger = queue.shift();
-    const loser = (winnerId === champion.id) ? challenger : champion;
-    const winner = (winnerId === champion.id) ? champion : challenger;
-    history.push({
-      round: round,
-      champion: champion,
-      challenger: challenger,
-      winner: winner,
-      loser: loser,
-    });
-    champion = winner;
-    round += 1;
-    if (queue.length === 0) {
+  async function advance(winnerSide) {
+    if (!tourState || tourState.phase !== "voting") return;
+    const champion = plotById(tourState.championId);
+    const challenger = plotById(tourState.challengerId);
+    const counts = tallyVotes();
+    const winner = winnerSide === "champion" ? champion : challenger;
+    const loser  = winnerSide === "champion" ? challenger : champion;
+    const historyEntry = {
+      round: tourState.round,
+      championId: champion.id,
+      challengerId: challenger.id,
+      winnerId: winner.id,
+      loserId: loser.id,
+      votesChampion: counts.champion,
+      votesChallenger: counts.challenger,
+    };
+    const newHistory = [...(tourState.history || []), historyEntry];
+    const orderIds = tourState.order;
+    const nextRound = tourState.round + 1;
+    if (nextRound > tourState.totalRounds) {
+      await update(ref(db, "tournament"), {
+        phase: "complete",
+        winnerId: winner.id,
+        history: newHistory,
+      });
+    } else {
+      const nextChallengerId = orderIds[nextRound]; // order is 0-indexed; round 1 faces order[1]
+      await update(ref(db, "tournament"), {
+        round: nextRound,
+        championId: winner.id,
+        challengerId: nextChallengerId,
+        history: newHistory,
+      });
+    }
+  }
+
+  async function resetCurrentRoundVotes() {
+    if (!tourState) return;
+    await remove(ref(db, `votes/${tourState.sessionId}/${tourState.round}`));
+  }
+
+  // ---- Voter action ------------------------------------------------------
+  async function castVote(side) {
+    if (!tourState || tourState.phase !== "voting") return;
+    const path = `votes/${tourState.sessionId}/${tourState.round}/${DEVICE_ID}`;
+    await set(ref(db, path), side);
+  }
+
+  // ---- Tally -------------------------------------------------------------
+  function tallyVotes() {
+    const counts = { champion: 0, challenger: 0 };
+    for (const side of Object.values(voteSnapshot)) {
+      if (side === "champion") counts.champion++;
+      else if (side === "challenger") counts.challenger++;
+    }
+    return counts;
+  }
+
+  function myVote() {
+    return voteSnapshot[DEVICE_ID] || null;
+  }
+
+  // ---- Rendering ---------------------------------------------------------
+  function render() {
+    renderHeaderControls();
+    if (!tourState) {
+      renderEmpty();
+      return;
+    }
+    if (tourState.phase === "complete") {
       renderWinner();
     } else {
       renderMatchup();
     }
   }
 
-  // ---- Rendering ------------------------------------------------------------
-  function renderMatchup() {
-    const arena = document.getElementById("arena");
-    const challenger = queue[0];
-    document.getElementById("progressText").textContent =
-      `Round ${round} of ${totalRounds}`;
-    document.getElementById("progressFill").style.width =
-      `${((round - 1) / totalRounds) * 100}%`;
-    document.getElementById("instruction").textContent =
-      "Click the plot you prefer";
+  function renderHeaderControls() {
+    if (ROLE === "presenter") {
+      headerControls.innerHTML = `
+        <button id="shuffleBtn" title="Start with a random challenger order">Shuffle &amp; Start</button>
+        <button id="restartBtn" title="Start in original order">Start / Restart</button>
+      `;
+      document.getElementById("shuffleBtn").onclick = () => startTournament(true);
+      document.getElementById("restartBtn").onclick = () => startTournament(false);
+    } else {
+      headerControls.innerHTML = "";
+    }
+  }
 
-    arena.innerHTML = `
+  function renderEmpty() {
+    const msg = ROLE === "presenter"
+      ? `<h2>Ready to start</h2><p>Click <strong>Start / Restart</strong> above to begin the tournament.</p>`
+      : `<h2>Waiting for the presenter to start the tournament…</h2>`;
+    arenaEl.innerHTML = `<div class="empty-state">${msg}</div>`;
+    progressText.textContent = ROLE === "presenter" ? "Not started" : "Waiting...";
+    progressFill.style.width = "0%";
+    instructionEl.textContent = "";
+  }
+
+  function renderMatchup() {
+    const champion = plotById(tourState.championId);
+    const challenger = plotById(tourState.challengerId);
+    const counts = tallyVotes();
+    const total = counts.champion + counts.challenger;
+    const pctChamp    = total > 0 ? (counts.champion    / total) * 100 : 0;
+    const pctChall    = total > 0 ? (counts.challenger  / total) * 100 : 0;
+    const vote = myVote();
+
+    progressText.textContent = `Round ${tourState.round} of ${tourState.totalRounds}`;
+    progressFill.style.width = `${((tourState.round - 1) / tourState.totalRounds) * 100}%`;
+    instructionEl.textContent = ROLE === "presenter"
+      ? "Vote counts update live"
+      : (vote ? `You voted: ${vote === "champion" ? "Champion" : "Challenger"}` : "Tap a plot to vote");
+
+    const cardClass = ROLE === "voter" ? "card voter" : "card";
+    const champSelected = vote === "champion" ? " selected" : "";
+    const challSelected = vote === "challenger" ? " selected" : "";
+
+    arenaEl.innerHTML = `
       <div class="matchup">
-        <div class="card" data-id="${champion.id}">
+        <div class="${cardClass}${champSelected}" data-side="champion">
           <div class="card-label">
             Option ${champion.id}: ${champion.name}
             <span class="card-tag champion">Champion</span>
           </div>
           <img src="${champion.file}" alt="${champion.name}" />
-          <div class="vote-hint">Click to keep the champion</div>
+          <div class="vote-bar-wrap">
+            <div class="vote-bar" style="width:${pctChamp}%"></div>
+            <div class="vote-count-label">${counts.champion} vote${counts.champion === 1 ? "" : "s"}</div>
+          </div>
+          ${ROLE === "voter" ? `<div class="vote-hint">${vote === "champion" ? "✓ Your vote" : "Click to vote for the champion"}</div>` : ""}
         </div>
         <div class="vs">VS</div>
-        <div class="card" data-id="${challenger.id}">
+        <div class="${cardClass}${challSelected}" data-side="challenger">
           <div class="card-label">
             Option ${challenger.id}: ${challenger.name}
             <span class="card-tag">Challenger</span>
           </div>
           <img src="${challenger.file}" alt="${challenger.name}" />
-          <div class="vote-hint">Click to crown a new champion</div>
+          <div class="vote-bar-wrap">
+            <div class="vote-bar" style="width:${pctChall}%"></div>
+            <div class="vote-count-label">${counts.challenger} vote${counts.challenger === 1 ? "" : "s"}</div>
+          </div>
+          ${ROLE === "voter" ? `<div class="vote-hint">${vote === "challenger" ? "✓ Your vote" : "Click to vote for the challenger"}</div>` : ""}
         </div>
       </div>
+      ${ROLE === "presenter" ? `
+        <div class="action-bar">
+          <button id="advChamp" class="primary">Advance Champion (${counts.champion})</button>
+          <button id="advChall" class="primary">Advance Challenger (${counts.challenger})</button>
+          <button id="resetVotes">Reset round votes</button>
+        </div>
+      ` : ""}
     `;
-    arena.querySelectorAll(".card").forEach(card => {
-      card.addEventListener("click", () => {
-        const id = parseInt(card.getAttribute("data-id"), 10);
-        vote(id);
+
+    if (ROLE === "voter") {
+      arenaEl.querySelectorAll(".card").forEach(el => {
+        el.addEventListener("click", () => castVote(el.getAttribute("data-side")));
       });
-    });
+    } else {
+      document.getElementById("advChamp").onclick = () => advance("champion");
+      document.getElementById("advChall").onclick = () => advance("challenger");
+      document.getElementById("resetVotes").onclick = resetCurrentRoundVotes;
+    }
   }
 
   function renderWinner() {
-    document.getElementById("progressText").textContent = "Tournament complete";
-    document.getElementById("progressFill").style.width = "100%";
-    document.getElementById("instruction").textContent = "We have a winner.";
+    const winner = plotById(tourState.winnerId);
+    progressText.textContent = "Tournament complete";
+    progressFill.style.width = "100%";
+    instructionEl.textContent = "We have a winner.";
 
-    const historyHtml = history.map(h => `
-      <li>
-        Round ${h.round}:
-        <span class="winner-mark">Option ${h.winner.id} (${h.winner.name})</span>
-        beat
-        <span class="loser-mark">Option ${h.loser.id} (${h.loser.name})</span>
-      </li>
-    `).join("");
+    const historyHtml = (tourState.history || []).map(h => {
+      const winnerPlot = plotById(h.winnerId);
+      const loserPlot  = plotById(h.loserId);
+      return `
+        <li>
+          Round ${h.round}:
+          <span class="winner-mark">Option ${winnerPlot.id} (${winnerPlot.name})</span>
+          beat
+          <span class="loser-mark">Option ${loserPlot.id} (${loserPlot.name})</span>
+          <span style="color:var(--uva-gray-dark);font-size:0.9em">
+            — ${h.votesChampion} vs ${h.votesChallenger}
+          </span>
+        </li>
+      `;
+    }).join("");
 
-    document.getElementById("arena").innerHTML = `
+    arenaEl.innerHTML = `
       <div class="winner-screen">
         <h2>Winner</h2>
-        <div class="winner-name">Option ${champion.id}: ${champion.name}</div>
-        <img src="${champion.file}" alt="${champion.name}" />
+        <div class="winner-name">Option ${winner.id}: ${winner.name}</div>
+        <img src="${winner.file}" alt="${winner.name}" />
       </div>
       <div class="history">
         <h3>How we got here</h3>
@@ -365,11 +612,8 @@
     `;
   }
 
-  // ---- Wire up --------------------------------------------------------------
-  document.getElementById("restartBtn").addEventListener("click", () => startTournament(false));
-  document.getElementById("shuffleBtn").addEventListener("click", () => startTournament(true));
-
-  startTournament(false);
+  // initial paint
+  renderHeaderControls();
 </script>
 </body>
 </html>
