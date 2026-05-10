@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Cloud — Live Audience Responses</title>
+<style>
+  :root {
+    --uva-blue: #232D4B;
+    --uva-orange: #E57200;
+    --uva-teal: #00B3BE;
+    --uva-gray-light: #E5E5E5;
+    --uva-gray-mid: #B7B7B7;
+    --uva-gray-dark: #666666;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--uva-blue);
+    background: #fafafa;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--uva-blue);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; font-weight: 600; }
+  header .subtitle { font-size: 0.95rem; opacity: 0.85; }
+  .role-badge {
+    background: var(--uva-orange);
+    padding: 0.25rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .status-bar {
+    background: var(--uva-gray-light);
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    border-bottom: 2px solid var(--uva-orange);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .status-info { font-weight: 600; }
+  .connection-status { font-size: 0.8rem; color: var(--uva-gray-dark); }
+  .connection-status.connected::before { content: "●"; color: #2ecc71; margin-right: 0.3rem; }
+  .connection-status.disconnected::before { content: "●"; color: #e74c3c; margin-right: 0.3rem; }
+  button {
+    background: white;
+    color: var(--uva-blue);
+    border: 1px solid var(--uva-gray-mid);
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) { background: var(--uva-blue); color: white; border-color: var(--uva-blue); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary {
+    background: var(--uva-orange);
+    color: white;
+    border-color: var(--uva-orange);
+    font-weight: 600;
+  }
+  button.primary:hover:not(:disabled) { background: #c86300; border-color: #c86300; }
+  main { padding: 2rem; max-width: 1600px; margin: 0 auto; }
+
+  /* Presenter: question controls */
+  .presenter-controls {
+    background: white;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .presenter-controls input[type="text"] {
+    flex: 1;
+    min-width: 240px;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+
+  /* Voter input */
+  .voter-card {
+    background: white;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .voter-card .question-display {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--uva-blue);
+    margin-bottom: 1.25rem;
+    text-align: center;
+  }
+  .voter-card form { display: flex; gap: 0.5rem; }
+  .voter-card input[type="text"] {
+    flex: 1;
+    padding: 0.7rem 0.9rem;
+    font-size: 1.1rem;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .voter-card input[type="text"]:focus {
+    outline: none;
+    border-color: var(--uva-orange);
+  }
+  .submissions-list {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--uva-gray-light);
+    padding-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--uva-gray-dark);
+  }
+  .submissions-list ul { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+  .submissions-list li {
+    display: inline-block;
+    background: var(--uva-gray-light);
+    padding: 0.25rem 0.7rem;
+    border-radius: 12px;
+    margin: 0.2rem;
+    color: var(--uva-blue);
+  }
+
+  /* Cloud display */
+  .question-banner {
+    background: var(--uva-blue);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .question-banner h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 600;
+  }
+  .question-banner .response-count {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    opacity: 0.85;
+  }
+  #cloudCanvas {
+    width: 100%;
+    height: 560px;
+    background: white;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* Simple fallback cloud (if wordcloud2 fails) */
+  .fallback-cloud {
+    background: white;
+    border: 1px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 2rem;
+    min-height: 560px;
+    text-align: center;
+    line-height: 2;
+  }
+  .fallback-cloud span {
+    display: inline-block;
+    margin: 0.3rem 0.6rem;
+    color: var(--uva-blue);
+  }
+
+  /* QR overlay */
+  .qr-big {
+    margin: 2rem auto 1rem;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    display: inline-block;
+  }
+  .qr-big img { display: block; width: 320px; height: 320px; }
+  .qr-url {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--uva-blue);
+    font-size: 1rem;
+    margin-top: 0.75rem;
+    word-break: break-all;
+  }
+  .qr-small {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: white;
+    border: 2px solid var(--uva-gray-mid);
+    border-radius: 8px;
+    padding: 0.5rem;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    cursor: pointer;
+  }
+  .qr-small:hover { border-color: var(--uva-orange); }
+  .qr-small img { display: block; width: 110px; height: 110px; }
+  .qr-small .qr-caption {
+    font-size: 0.7rem;
+    text-align: center;
+    color: var(--uva-gray-dark);
+    margin-top: 0.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--uva-gray-dark);
+  }
+  .empty-state h2 { color: var(--uva-blue); }
+
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--uva-gray-dark);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--uva-gray-dark); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Word Cloud <span id="roleBadge" class="role-badge" style="display:none"></span></h1>
+    <div class="subtitle">Live audience responses</div>
+  </div>
+  <div>
+    <a id="modeLink" href="?role=presenter" style="color:white;opacity:0.85;font-size:0.85rem;">Presenter view</a>
+  </div>
+</header>
+
+<div class="status-bar">
+  <span class="status-info" id="statusInfo">Waiting…</span>
+  <span class="connection-status disconnected" id="connStatus">Connecting...</span>
+</div>
+
+<main><div id="arena"><div class="empty-state"><h2>Loading…</h2></div></div></main>
+
+<footer>Faculty Retreat — Learning to Work on the Jagged Frontier</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getDatabase, ref, set, push, onValue, remove
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxsTW092AlcZ8MAnqCTIHghnysk2y2eQs",
+    authDomain: "j-colmer.firebaseapp.com",
+    databaseURL: "https://j-colmer-default-rtdb.firebaseio.com",
+    projectId: "j-colmer",
+    storageBucket: "j-colmer.firebasestorage.app",
+    messagingSenderId: "801031852610",
+    appId: "1:801031852610:web:25c1665d1dcdaafe2e53db"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // ---- Role & device id -------------------------------------------------
+  const params = new URLSearchParams(location.search);
+  const ROLE = params.get("role") === "presenter" ? "presenter" : "voter";
+
+  function getDeviceId() {
+    let id = localStorage.getItem("wordCloudDeviceId");
+    if (!id) {
+      id = "d-" + Math.random().toString(36).slice(2, 12) + "-" + Date.now().toString(36);
+      localStorage.setItem("wordCloudDeviceId", id);
+    }
+    return id;
+  }
+  const DEVICE_ID = getDeviceId();
+
+  // ---- DOM --------------------------------------------------------------
+  const arenaEl      = document.getElementById("arena");
+  const statusInfo   = document.getElementById("statusInfo");
+  const roleBadgeEl  = document.getElementById("roleBadge");
+  const modeLinkEl   = document.getElementById("modeLink");
+  const connStatusEl = document.getElementById("connStatus");
+
+  if (ROLE === "presenter") {
+    roleBadgeEl.textContent = "Presenter";
+    roleBadgeEl.style.display = "inline-block";
+    modeLinkEl.href = location.pathname;
+    modeLinkEl.textContent = "Voter view";
+  }
+
+  // ---- Voter URL & QR ---------------------------------------------------
+  function voterUrl() { return location.origin + location.pathname; }
+  function qrSrc(size) {
+    const url = encodeURIComponent(voterUrl());
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${url}`;
+  }
+
+  // ---- State ------------------------------------------------------------
+  let questionState = null;     // { text, id, createdAt }
+  let responses = {};           // { pushId: { text, deviceId, ts } }
+
+  onValue(ref(db, ".info/connected"), snap => {
+    const connected = snap.val() === true;
+    connStatusEl.textContent = connected ? "Connected" : "Disconnected";
+    connStatusEl.className = "connection-status " + (connected ? "connected" : "disconnected");
+  });
+
+  onValue(ref(db, "wordcloud/question"), snap => {
+    questionState = snap.val();
+    render();
+  });
+
+  let responsesUnsub = null;
+  let lastQid = null;
+  function subscribeResponses() {
+    const qid = questionState ? questionState.id : null;
+    if (qid === lastQid) return;
+    if (responsesUnsub) responsesUnsub();
+    lastQid = qid;
+    responses = {};
+    if (!qid) { render(); return; }
+    responsesUnsub = onValue(ref(db, `wordcloud/responses/${qid}`), snap => {
+      responses = snap.val() || {};
+      render();
+    });
+  }
+
+  // ---- Presenter actions ------------------------------------------------
+  async function launchQuestion(text) {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return;
+    const id = "q-" + Date.now().toString(36);
+    await set(ref(db, "wordcloud/question"), {
+      text: trimmed,
+      id,
+      createdAt: Date.now(),
+    });
+  }
+
+  async function clearQuestion() {
+    await remove(ref(db, "wordcloud/question"));
+  }
+
+  async function clearResponses() {
+    if (!questionState) return;
+    await remove(ref(db, `wordcloud/responses/${questionState.id}`));
+  }
+
+  // ---- Voter action -----------------------------------------------------
+  async function submitResponse(text) {
+    const trimmed = (text || "").trim();
+    if (!trimmed || !questionState) return;
+    const clean = trimmed.slice(0, 80);
+    await push(ref(db, `wordcloud/responses/${questionState.id}`), {
+      text: clean,
+      deviceId: DEVICE_ID,
+      ts: Date.now(),
+    });
+  }
+
+  // ---- Word frequency + rendering ---------------------------------------
+  function normalize(text) {
+    return text.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function computeFrequencies() {
+    const counts = new Map();
+    for (const r of Object.values(responses)) {
+      if (!r || !r.text) continue;
+      const key = normalize(r.text);
+      if (!key) continue;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }
+
+  function renderCloud() {
+    const canvas = document.getElementById("cloudCanvas");
+    if (!canvas) return;
+    const freq = computeFrequencies();
+    if (freq.length === 0) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#B7B7B7";
+      ctx.font = "20px -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Waiting for responses…", canvas.width / 2, canvas.height / 2);
+      return;
+    }
+    const maxCount = freq[0][1];
+    // Match canvas drawing buffer to display size
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    if (typeof WordCloud === "function") {
+      WordCloud(canvas, {
+        list: freq,
+        gridSize: Math.round(16 * rect.width / 1024),
+        weightFactor: (size) => Math.pow(size / maxCount, 0.7) * Math.min(rect.width, rect.height) / 6 + 14,
+        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+        color: function () {
+          const palette = ["#232D4B", "#E57200", "#00B3BE", "#666666", "#c86300"];
+          return palette[Math.floor(Math.random() * palette.length)];
+        },
+        backgroundColor: "white",
+        rotateRatio: 0.15,
+        minRotation: -Math.PI / 8,
+        maxRotation:  Math.PI / 8,
+        shuffle: false,
+        drawOutOfBound: false,
+      });
+    } else {
+      // Fallback: simple sized spans
+      const wrap = document.createElement("div");
+      wrap.className = "fallback-cloud";
+      for (const [word, count] of freq) {
+        const span = document.createElement("span");
+        span.textContent = word;
+        const size = 14 + (count / maxCount) * 48;
+        span.style.fontSize = size + "px";
+        wrap.appendChild(span);
+      }
+      canvas.replaceWith(wrap);
+    }
+  }
+
+  // ---- Main render ------------------------------------------------------
+  function render() {
+    subscribeResponses();
+    if (ROLE === "presenter") renderPresenter();
+    else renderVoter();
+    updateCornerQr();
+  }
+
+  function renderPresenter() {
+    const controlsHtml = `
+      <div class="presenter-controls">
+        <input type="text" id="questionInput"
+               placeholder="Type a question for the audience…"
+               value="${questionState ? escapeHtml(questionState.text) : ""}" />
+        <button class="primary" id="launchBtn">Launch question</button>
+        <button id="clearResponsesBtn" ${!questionState ? "disabled" : ""}>Clear responses</button>
+        <button id="clearQuestionBtn" ${!questionState ? "disabled" : ""}>End question</button>
+      </div>
+    `;
+
+    if (!questionState) {
+      const responseCount = 0;
+      statusInfo.textContent = "No active question";
+      arenaEl.innerHTML = `
+        ${controlsHtml}
+        <div class="empty-state">
+          <h2>Ready when you are</h2>
+          <p>Type a question above and launch it. Audience responses will appear here as a word cloud.</p>
+          <div class="qr-big"><img src="${qrSrc(320)}" alt="QR to voter page" /></div>
+          <div class="qr-url">${voterUrl()}</div>
+        </div>
+      `;
+    } else {
+      const responseCount = Object.keys(responses).length;
+      statusInfo.textContent = `${responseCount} response${responseCount === 1 ? "" : "s"}`;
+      arenaEl.innerHTML = `
+        ${controlsHtml}
+        <div class="question-banner">
+          <h2>${escapeHtml(questionState.text)}</h2>
+          <div class="response-count">${responseCount} response${responseCount === 1 ? "" : "s"}</div>
+        </div>
+        <canvas id="cloudCanvas"></canvas>
+      `;
+      renderCloud();
+    }
+
+    document.getElementById("launchBtn").onclick = () => {
+      const val = document.getElementById("questionInput").value;
+      launchQuestion(val);
+    };
+    document.getElementById("questionInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        launchQuestion(e.target.value);
+      }
+    });
+    const clrR = document.getElementById("clearResponsesBtn");
+    if (clrR && !clrR.disabled) clrR.onclick = clearResponses;
+    const clrQ = document.getElementById("clearQuestionBtn");
+    if (clrQ && !clrQ.disabled) clrQ.onclick = clearQuestion;
+  }
+
+  function renderVoter() {
+    if (!questionState) {
+      statusInfo.textContent = "Waiting for a question";
+      arenaEl.innerHTML = `
+        <div class="empty-state">
+          <h2>Waiting for the presenter to ask a question…</h2>
+        </div>
+      `;
+      return;
+    }
+
+    const responseCount = Object.keys(responses).length;
+    statusInfo.textContent = `${responseCount} response${responseCount === 1 ? "" : "s"} so far`;
+
+    const myResponses = Object.values(responses)
+      .filter(r => r && r.deviceId === DEVICE_ID)
+      .map(r => r.text);
+
+    arenaEl.innerHTML = `
+      <div class="voter-card">
+        <div class="question-display">${escapeHtml(questionState.text)}</div>
+        <form id="voterForm">
+          <input type="text" id="voterInput" placeholder="Type a word or short phrase…"
+                 maxlength="80" autocomplete="off" autofocus />
+          <button type="submit" class="primary">Submit</button>
+        </form>
+        <div class="submissions-list">
+          <div>You've submitted ${myResponses.length}:</div>
+          <ul>
+            ${myResponses.map(t => `<li>${escapeHtml(t)}</li>`).join("") || "<em style='color:var(--uva-gray-dark)'>Nothing yet.</em>"}
+          </ul>
+        </div>
+      </div>
+    `;
+    document.getElementById("voterForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const input = document.getElementById("voterInput");
+      await submitResponse(input.value);
+      input.value = "";
+      input.focus();
+    });
+  }
+
+  // ---- Corner QR --------------------------------------------------------
+  function updateCornerQr() {
+    const existing = document.getElementById("cornerQr");
+    const shouldShow = ROLE === "presenter" && !!questionState;
+    if (shouldShow) {
+      if (!existing) {
+        const wrap = document.createElement("div");
+        wrap.id = "cornerQr";
+        wrap.className = "qr-small";
+        wrap.title = "Voter link — click to enlarge";
+        wrap.innerHTML = `
+          <img src="${qrSrc(220)}" alt="QR code" />
+          <div class="qr-caption">Scan to submit</div>
+        `;
+        wrap.addEventListener("click", showQrModal);
+        document.body.appendChild(wrap);
+      }
+    } else if (existing) {
+      existing.remove();
+    }
+  }
+
+  function showQrModal() {
+    const existing = document.getElementById("qrModal");
+    if (existing) { existing.remove(); return; }
+    const modal = document.createElement("div");
+    modal.id = "qrModal";
+    modal.style.cssText = `
+      position: fixed; inset: 0; background: rgba(35, 45, 75, 0.92);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 100; cursor: pointer;
+    `;
+    modal.innerHTML = `
+      <div style="background:white;padding:2rem;border-radius:12px;text-align:center;">
+        <img src="${qrSrc(480)}" alt="QR" style="display:block;width:480px;height:480px;" />
+        <div style="font-family:ui-monospace,monospace;color:var(--uva-blue);margin-top:1rem;font-size:1.2rem;">${voterUrl()}</div>
+        <div style="color:var(--uva-gray-dark);margin-top:0.5rem;font-size:0.9rem;">Click anywhere to close</div>
+      </div>
+    `;
+    modal.addEventListener("click", () => modal.remove());
+    document.body.appendChild(modal);
+  }
+
+  // ---- utils ------------------------------------------------------------
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+</script>
+</body>
+</html>
